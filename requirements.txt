@@ -1,0 +1,16 @@
+langchain 
+langchain-community 
+langchain-google-genai 
+chromadb 
+pypdf 
+rank_bm25 
+langchain-text-splitters
+langchain_google_genai
+PyPDFDirectoryLoader
+python-dotenv
+fastapi
+uvicorn
+getpass
+os
+numpy
+datetime   
