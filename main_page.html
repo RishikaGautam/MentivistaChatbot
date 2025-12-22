@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mentivista LLM</title>
+  <meta name="description" content="Vista Coach – Ask sales questions about your business. Answers powered by a sales knowledge base." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #06110d;
+      --card: #0e1a16cc; /* translucent */
+      --text: #f4fff9;
+      --muted: #c8f1df;
+      --link: #d9fff0;
+      /* repurpose previous purple scale as mint/green scale */
+      --purple-50: #f0fff8;
+      --purple-100: #e3fff2;
+      --purple-200: #c9fbe5;
+      --purple-300: #aaf4d3;  /* light mint accent */
+      --purple-400: #7fe8bd;
+      --purple-500: #42d39f;  /* primary mint */
+      --purple-600: #2fb889;
+      --purple-700: #24936f;
+      --purple-800: #1b6f56;
+      --purple-900: #134d3d;
+      --accent: #86efac;      /* soft green accent */
+      --success: #38d39f;
+      --warn: #ffca3a;
+      --danger: #ff6b6b;
+      --radius: 18px;
+      --shadow: 0 10px 30px rgba(0,0,0,.35), 0 6px 18px rgba(47,184,137,.22);
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      background: radial-gradient(1200px 800px at 80% -10%, rgba(66,211,159,.30), transparent 60%),
+                  radial-gradient(1200px 800px at -10% 20%, rgba(134,239,172,.22), transparent 60%),
+                  linear-gradient(180deg, #07130f 0%, #06110d 55%, #06110d 100%);
+      color: var(--text);
+    }
+    a { color: var(--link); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .container { max-width: 1180px; margin: 0 auto; padding: 24px; }
+
+    /* Header */
+    header { position: sticky; top: 0; backdrop-filter: blur(10px); background: rgba(11,7,18,.55); border-bottom: 1px solid rgba(255,255,255,.06); z-index: 50; }
+    .nav { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 0; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .logo {
+      width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, var(--purple-500), var(--accent));
+      display: grid; place-items: center; box-shadow: var(--shadow);
+    }
+    .logo svg { width: 22px; height: 22px; fill: white; }
+    .brand h1 { font-size: 20px; letter-spacing: .4px; margin: 0; font-weight: 700; }
+    .nav-links { display: flex; gap: 10px; align-items: center; }
+    .nav-links a { padding: 10px 14px; border-radius: 12px; color: var(--text); border: 1px solid rgba(255,255,255,.06); background: rgba(22,15,34,.5); }
+    .nav-links a:hover { background: rgba(127, 232, 189, .18); }
+    .cta { padding: 10px 16px; border-radius: 12px; background: linear-gradient(135deg, var(--accent), var(--purple-500)); color: #fff; border: none; font-weight: 600; box-shadow: var(--shadow); }
+    .cta:hover { filter: brightness(1.03); cursor: pointer; }
+
+    /* Hero */
+    .hero { display: grid; grid-template-columns: 1.15fr .85fr; gap: 28px; align-items: center; padding: 48px 0 8px; }
+    .hero h2 { font-size: clamp(30px, 3.2vw, 44px); margin: 0 0 10px; line-height: 1.1; }
+    .hero p { margin: 0 0 22px; color: var(--muted); font-size: 15.5px; }
+    .glass { background: var(--card); border: 1px solid rgba(255,255,255,.08); border-radius: var(--radius); box-shadow: var(--shadow); }
+    .ask { padding: 16px; display: grid; gap: 12px; }
+    .ask form { display: grid; grid-template-columns: 1fr auto; gap: 12px; }
+    .input {
+      border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.03); color: var(--text);
+      padding: 14px 14px; border-radius: 12px; font-size: 15px; outline: none; transition: border .15s ease;
+    }
+    .input:focus { border-color: var(--purple-300); box-shadow: 0 0 0 3px rgba(170, 244, 211, .28); }
+    .btn { padding: 12px 16px; border-radius: 12px; background: linear-gradient(135deg, var(--purple-500), var(--accent)); color: white; border: none; font-weight: 600; }
+    .btn:hover { filter: brightness(1.05); cursor: pointer; }
+
+    /* Stats */
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 20px; }
+    .stat { padding: 16px; }
+    .stat h3 { margin: 0; font-size: 13px; color: var(--muted); font-weight: 600; letter-spacing: .4px; }
+    .stat p { margin: 6px 0 0; font-size: 20px; font-weight: 800; }
+
+    /* Features */
+    .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; padding: 36px 0 24px; }
+    .card { padding: 18px; }
+    .card h4 { margin: 0 0 8px; font-size: 16px; }
+    .card p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.5; }
+
+    /* How it works */
+    .hiw { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; padding: 10px 0 46px; }
+    .step { padding: 18px; border-left: 3px solid var(--purple-400); }
+    .step-num { display: inline-block; background: rgba(170, 244, 211, .18); color: #fff; padding: 6px 10px; border-radius: 999px; font-weight: 700; font-size: 12px; }
+    .step h5 { margin: 10px 0 6px; font-size: 15px; }
+    .step p { margin: 0; color: var(--muted); font-size: 14px; }
+
+    /* Footer */
+    footer { border-top: 1px solid rgba(255,255,255,.08); color: var(--muted); padding: 18px 0 36px; font-size: 13px; }
+    .foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+    /* Responsive */
+    @media (max-width: 980px) {
+      .hero { grid-template-columns: 1fr; }
+      .features, .hiw, .stats { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 640px) {
+      .features, .hiw, .stats { grid-template-columns: 1fr; }
+      .nav-links { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container nav">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">
+          <!-- Simple spark icon -->
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2l1.9 5.6L20 9l-5.5 3.7L16 20l-4-3-4 3 1.5-7.3L4 9l6.1-1.4L12 2z"/>
+          </svg>
+        </div>
+        <h1>VISTA Coach</h1>
+      </div>
+      <nav class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#how">How it works</a>
+      </nav>
+      <button class="cta" id="openDocs">Docs</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <div>
+        <h2>An AI Business Coach Tool for <span style="color:var(--purple-300)">Beauty and Wellness Entrepreuneurs.</span></h2>
+        <p>Ask Vista Coach anything about your beauty and wellness company.</p>
+
+        <div class="glass ask">
+          <label for="question" style="font-weight:700; font-size: 13px; color: var(--muted);">Ask a sales question</label>
+          <form id="askForm" data-testid="ask-form">
+            <input id="question" data-testid="question-input" class="input" placeholder="e.g., What are sales techniques to create more business branches?" autocomplete="off"/>
+            <button class="btn" type="submit">Ask →</button>
+          </form>
+          <div id="answer" data-testid="answer" style="display:none; border-top:1px solid rgba(255,255,255,.06); padding-top:12px; white-space:pre-wrap;"></div>
+        </div>  
+
+        <div class="stats">
+          <div class="glass stat">
+            <h3>Serves You</h3>
+            <p>AI Model Trained For Your Needs</p>
+          </div>
+          <div class="glass stat">
+            <h3>Knowledge Source</h3>
+            <p>Curated Beauty Business Library</p>
+          </div>
+          <div class="glass stat">
+            <h3>LLM</h3>
+            <p>Gemini 2.5 (flash)</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="features" class="features">
+      <div class="glass card">
+        <h4>Fast, focused answers</h4>
+        <p>Sales‑centric retrieval with compact prompts for crisp, grounded recommendations.</p>
+      </div>
+      <div class="glass card">
+        <h4>Secure by default</h4>
+        <p>Keys stay on your machine. No hard‑coded secrets. Local indexing via in‑memory vector store by default.</p>
+      </div>
+      <div class="glass card">
+        <h4>Beautiful Markdown</h4>
+        <p>Structured headings, concise bullets, and bolded labels for scan‑ability out of the box.</p>
+      </div>
+    </section>
+
+    <section id="how" class="hiw">
+      <div class="glass step">
+        <span class="step-num">1</span>
+        <h5>Connect</h5>
+        <p>We stay synced with relevant sales documents and textbooks.</p>
+      </div>
+      <div class="glass step">
+        <span class="step-num">2</span>
+        <h5>Retrieve</h5>
+        <p>For each question, we pull the most relevant context from our curated sales library.</p>
+      </div>
+      <div class="glass step">
+        <span class="step-num">3</span>
+        <h5>Answer</h5>
+        <p>We craft concise, actionable guidance with citations to the underlying sources.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container foot">
+      <div>© <span id="year"></span> Mentivista. All rights reserved.</div>
+      <div>Need help? <a href="relations@mentivista.com" id="contact">Contact support</a></div>
+    </div>
+  </footer>
+
+  <script>
+    // Year
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // "Docs" (placeholder)
+    document.getElementById('openDocs').addEventListener('click', () => {
+      alert('Docs coming soon. For now, see README.md.');
+    });
+
+    // API Key presence (client-side hint only)
+    function detectApiKey() {
+      const envHint = (window.__GOOGLE_API_KEY__ || '').trim();
+      const ls = (localStorage.getItem('GOOGLE_API_KEY') || '').trim();
+      const status = document.getElementById('apiStatus');
+      if (envHint || ls) {
+        status.textContent = 'Detected';
+        status.style.color = '#38d39f';
+      } else {
+        status.textContent = 'Not detected';
+        status.style.color = '#ffca3a';
+      }
+    }
+    detectApiKey();
+
+    // Ask form (demo only – wire to your backend /query)
+    const askForm = document.getElementById('askForm');
+    const answerEl = document.getElementById('answer');
+    askForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const q = document.getElementById('question').value.trim();
+      if (!q) return;
+      answerEl.style.display = 'block';
+      answerEl.textContent = 'Thinking…';
+      try {
+        // TODO: replace with your real API endpoint
+        // Example:
+        // const res = await fetch('http://127.0.0.1:8000/query', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({input:q})});
+        // const data = await res.json();
+        // answerEl.textContent = data.answer || JSON.stringify(data, null, 2);
+
+        // Placeholder simulation
+        await new Promise(r => setTimeout(r, 600));
+        answerEl.textContent = 'Demo mode: connect your backend at /query to see real answers.';
+      } catch (err) {
+        answerEl.textContent = 'Error contacting the backend. Check console and CORS settings.';
+        console.error(err);
+      }
+    });
+
+    // Lightweight UI smoke tests (run by visiting the page with #test)
+    if (location.hash === '#test') {
+      try {
+        console.log('[TEST] starting smoke tests');
+        console.assert(document.querySelector('[data-testid="ask-form"]'), 'ask form missing');
+        console.assert(document.querySelector('[data-testid="question-input"]'), 'question input missing');
+        console.assert(document.querySelector('[data-testid="answer"]'), 'answer container missing');
+
+        // simulate a submit
+        const qInput = document.getElementById('question');
+        qInput.value = 'How can we improve Q4 conversion?';
+        askForm.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+        setTimeout(() => {
+          const ok = document.getElementById('answer').textContent.length > 0;
+          console.assert(ok, 'answer area did not update');
+          console.log('[TEST] smoke tests completed');
+        }, 800);
+      } catch (e) {
+        console.error('[TEST] failed with error', e);
+      }
+    }
+  </script>
+</body>
+</html>
