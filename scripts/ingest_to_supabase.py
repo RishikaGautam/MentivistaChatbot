@@ -8,9 +8,9 @@ from pypdf import PdfReader
 from google import genai
 from google.genai import types
 
-SUPABASE_URL = os.environ["SUPABASE_URL"]
-SUPABASE_SERVICE_ROLE_KEY = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+SUPABASE_URL = os.environ["https://jcaitutfrqkelipgvfct.supabase.co"]
+SUPABASE_SERVICE_ROLE_KEY = os.environ["sb_publishable_p0C56Ce6NcIcAhLlpawHKw_659_gcy8"]
+GEMINI_API_KEY = os.getenv("AIzaSyCMYEtjYcO-XCntKKyQsRzS-5cFI5EEbkI")
 
 EMBED_MODEL = os.getenv("EMBED_MODEL", "gemini-embedding-001")
 EMBED_DIMS = int(os.getenv("EMBED_DIMS", "768"))

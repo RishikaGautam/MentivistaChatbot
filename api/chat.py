@@ -12,11 +12,11 @@ from google.genai import types
 app = FastAPI()
 
 # ---- Config ----
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+SUPABASE_URL = os.getenv("https://jcaitutfrqkelipgvfct.supabase.co")
+SUPABASE_SERVICE_ROLE_KEY = os.getenv("sb_publishable_p0C56Ce6NcIcAhLlpawHKw_659_gcy8")
 
 # Gemini API key can be GEMINI_API_KEY or GOOGLE_API_KEY. :contentReference[oaicite:4]{index=4}
-GEMINI_API_KEY = os.getenv("GOOGLE_API_KEY")
+GEMINI_API_KEY = os.getenv("AIzaSyCMYEtjYcO-XCntKKyQsRzS-5cFI5EEbkI")
 
 EMBED_MODEL = os.getenv("EMBED_MODEL", "gemini-embedding-001")
 CHAT_MODEL = os.getenv("CHAT_MODEL", "gemini-2.0-flash-001")
@@ -157,7 +157,7 @@ def chat_logic(req: ChatRequest):
     for d in docs:
         src = d.get("source") or (d.get("metadata") or {}).get("source")
         if src and src not in used_sources:
-            used_sources.append(src)
+            used_sources.append(src)gi
 
     return {
         "conversation_id": conversation_id,
