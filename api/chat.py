@@ -106,11 +106,13 @@ class ChatRequest(BaseModel):
 
 @app.get("/")
 def health():
-    return {"ok": True}
+    return {"ok": True, "route": "/"}
 
+@app.get("/api/chat")
+def health_api_chat():
+    return {"ok": True, "route": "/api/chat"}
 
-@app.post("/")
-def chat(req: ChatRequest):
+def chat_logic(req: ChatRequest):
     try:
         supabase = get_supabase()
     except Exception as e:
@@ -120,38 +122,31 @@ def chat(req: ChatRequest):
     if not text:
         raise HTTPException(status_code=400, detail="Missing 'text'.")
 
-    # 1) Ensure conversation exists
     conversation_id = req.conversation_id
     if not conversation_id:
         inserted = supabase.table("conversations").insert({}).execute()
         conversation_id = inserted.data[0]["id"]
 
-    # 2) Save user message
     supabase.table("messages").insert({
         "conversation_id": conversation_id,
         "role": "user",
         "content": text
     }).execute()
 
-    # 3) Embed + retrieve
     try:
         q_emb = embed_query(text)
-        # Supabase recommends rpc('match_documents', ...) :contentReference[oaicite:8]{index=8}
         matches = supabase.rpc("match_documents", {
             "query_embedding": q_emb,
             "match_threshold": MATCH_THRESHOLD,
             "match_count": MATCH_COUNT,
         }).execute()
         docs = matches.data or []
-    except Exception as e:
+    except Exception:
         docs = []
-        # Keep going even if retrieval fails
 
-    # 4) Generate answer grounded in context
     prompt = build_prompt(text, docs)
     answer = generate_answer(prompt)
 
-    # 5) Save assistant message
     supabase.table("messages").insert({
         "conversation_id": conversation_id,
         "role": "assistant",
@@ -160,7 +155,7 @@ def chat(req: ChatRequest):
 
     used_sources = []
     for d in docs:
-        src = d.get("source") or d.get("metadata", {}).get("source")
+        src = d.get("source") or (d.get("metadata") or {}).get("source")
         if src and src not in used_sources:
             used_sources.append(src)
 
@@ -169,3 +164,15 @@ def chat(req: ChatRequest):
         "answer": answer,
         "sources": used_sources[:6],
     }
+
+
+@app.post("/")
+def chat_root(req: ChatRequest):
+    return chat_logic(req)
+
+
+@app.post("/api/chat")
+def chat_api(req: ChatRequest):
+    return chat_logic(req)
+
+
