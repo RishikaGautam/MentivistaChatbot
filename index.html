@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Startup Voice + RAG Chatbot</title>
+  <style>
+    :root{
+      --bg:#0b1020;
+      --card:#121a33;
+      --muted:#a9b3d1;
+      --text:#e9eeff;
+      --accent:#7c5cff;
+      --accent2:#28d7a6;
+      --border:rgba(255,255,255,.12);
+      --shadow: 0 12px 30px rgba(0,0,0,.35);
+      --radius:16px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:var(--sans);
+      background:
+        radial-gradient(1200px 700px at 20% 10%, rgba(124,92,255,.22), transparent 55%),
+        radial-gradient(900px 500px at 85% 30%, rgba(40,215,166,.14), transparent 55%),
+        var(--bg);
+      color:var(--text);
+      min-height:100vh;
+    }
+
+    .wrap{
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 28px 18px 80px;
+    }
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      font-weight:700;
+      letter-spacing:.2px;
+    }
+    .dot{
+      width:12px;height:12px;border-radius:999px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      box-shadow: 0 0 0 6px rgba(124,92,255,.12);
+    }
+    .badge{
+      font-size:12px;
+      color:var(--muted);
+      border:1px solid var(--border);
+      padding:6px 10px;
+      border-radius:999px;
+      background: rgba(255,255,255,.03);
+    }
+
+    .hero{
+      margin: 12px 0 18px;
+      padding: 22px;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.03);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+    .hero h1{
+      margin:0 0 8px;
+      font-size: 26px;
+      line-height: 1.2;
+    }
+    .hero p{
+      margin:0;
+      color:var(--muted);
+      max-width: 70ch;
+      line-height: 1.5;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      margin-top: 16px;
+    }
+    @media (min-width: 900px){
+      .grid{
+        grid-template-columns: 1.1fr .9fr;
+      }
+    }
+
+    .card{
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.03);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+    .card h2{
+      margin: 0 0 10px;
+      font-size: 16px;
+      letter-spacing:.2px;
+    }
+    .muted{ color: var(--muted); }
+
+    label{
+      display:block;
+      font-size: 13px;
+      color: var(--muted);
+      margin: 10px 0 8px;
+    }
+    textarea{
+      width: 100%;
+      min-height: 140px;
+      resize: vertical;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(0,0,0,.22);
+      color: var(--text);
+      padding: 12px 12px;
+      outline: none;
+      line-height: 1.5;
+      font-size: 14px;
+    }
+    textarea:focus{
+      border-color: rgba(124,92,255,.55);
+      box-shadow: 0 0 0 4px rgba(124,92,255,.18);
+    }
+
+    .row{
+      display:flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items:center;
+      margin-top: 12px;
+    }
+
+    .btn{
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.04);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: transform .05s ease, background .15s ease, border-color .15s ease;
+      user-select:none;
+    }
+    .btn:hover{ background: rgba(255,255,255,.07); }
+    .btn:active{ transform: translateY(1px); }
+    .btn.primary{
+      border-color: rgba(124,92,255,.45);
+      background: rgba(124,92,255,.18);
+    }
+    .btn.primary:hover{
+      background: rgba(124,92,255,.24);
+    }
+    .btn:disabled{
+      cursor:not-allowed;
+      opacity:.6;
+    }
+
+    .toggle{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      border:1px solid var(--border);
+      padding: 9px 10px;
+      border-radius: 12px;
+      background: rgba(0,0,0,.18);
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .toggle input{ transform: translateY(1px); }
+
+    .answer{
+      margin-top: 14px;
+      border-radius: 14px;
+      border:1px solid var(--border);
+      background: rgba(0,0,0,.20);
+      padding: 12px 12px;
+      min-height: 110px;
+      white-space: pre-wrap;
+      line-height: 1.55;
+      font-size: 14px;
+    }
+    .meta{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .pill{
+      border:1px solid var(--border);
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.03);
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+
+    .small{
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+      margin-top: 10px;
+    }
+    .warn{
+      border-left: 3px solid rgba(124,92,255,.9);
+      padding-left: 10px;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .kbd{
+      font-family: var(--mono);
+      border:1px solid var(--border);
+      padding: 2px 6px;
+      border-radius: 8px;
+      background: rgba(255,255,255,.04);
+      color: var(--text);
+      font-size: 12px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <div class="dot"></div>
+        <div>
+          Startup Chatbot
+          <div class="muted" style="font-weight:500;font-size:12px;margin-top:2px;">Vercel + Supabase + RAG</div>
+        </div>
+      </div>
+      <div class="badge">Endpoint: <span class="pill">/api/chat</span></div>
+    </div>
+
+    <div class="hero">
+      <h1>Ask anything (type or speak)</h1>
+      <p>
+        This page calls <span class="kbd">POST /api/chat</span> with your message.
+        The backend does retrieval (Supabase pgvector) + LLM generation and returns an answer.
+      </p>
+    </div>
+
+    <div class="grid">
+      <!-- LEFT: Chat -->
+      <div class="card">
+        <h2>Chat</h2>
+        <p class="muted" style="margin:0 0 8px;">Type your question or use the mic button. Answers can be read aloud.</p>
+
+        <form id="askForm">
+          <label for="question">Your message</label>
+          <textarea id="question" placeholder="e.g., Write a cold email for a potential customer…"></textarea>
+
+          <div class="row">
+            <button class="btn primary" type="submit" id="askBtn">Ask</button>
+            <button class="btn" type="button" id="micBtn">🎙️ Speak</button>
+            <button class="btn" type="button" id="clearBtn">Clear</button>
+
+            <div class="toggle">
+              <input type="checkbox" id="ttsToggle" checked />
+              <label for="ttsToggle" style="margin:0;cursor:pointer;">Read answers out loud</label>
+            </div>
+          </div>
+        </form>
+
+        <div class="answer" id="answer" style="display:none;"></div>
+
+        <div class="meta">
+          <div class="pill">conversation_id: <span id="convoId">none</span></div>
+          <div class="pill">status: <span id="status">idle</span></div>
+        </div>
+
+        <div class="warn">
+          If the mic button says SpeechRecognition isn’t supported, try Chrome.
+          Typing still works everywhere.
+        </div>
+      </div>
+
+      <!-- RIGHT: About / Debug -->
+      <div class="card">
+        <h2>Notes</h2>
+        <div class="small">
+          <div><b>What this frontend expects back from the backend:</b></div>
+          <div class="pill" style="margin-top:8px;">{"conversation_id":"…","answer":"…","sources":["…"]}</div>
+          <div style="margin-top:12px;"><b>Where conversation state lives:</b></div>
+          <div class="muted">We store <span class="kbd">conversation_id</span> in <span class="kbd">sessionStorage</span>.</div>
+
+          <div style="margin-top:12px;"><b>Security:</b></div>
+          <div class="muted">No API keys are used in the browser. Your keys should be set as environment variables on Vercel.</div>
+
+          <div style="margin-top:12px;"><b>Tip:</b></div>
+          <div class="muted">Press <span class="kbd">Cmd</span> + <span class="kbd">Enter</span> to submit quickly.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const askForm = document.getElementById('askForm');
+    const askBtn = document.getElementById('askBtn');
+    const qEl = document.getElementById('question');
+    const answerEl = document.getElementById('answer');
+    const micBtn = document.getElementById('micBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const ttsToggle = document.getElementById('ttsToggle');
+    const convoIdEl = document.getElementById('convoId');
+    const statusEl = document.getElementById('status');
+
+    function setStatus(s) {
+      statusEl.textContent = s;
+    }
+
+    function getConversationId() {
+      return sessionStorage.getItem('conversation_id') || null;
+    }
+
+    function setConversationId(id) {
+      if (id) sessionStorage.setItem('conversation_id', id);
+      convoIdEl.textContent = id || 'none';
+    }
+
+    function speak(text) {
+      if (!ttsToggle?.checked) return;
+      if (!('speechSynthesis' in window)) return;
+      const u = new SpeechSynthesisUtterance(text);
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(u);
+    }
+
+    async function callChat(text) {
+      const conversation_id = getConversationId();
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, conversation_id })
+      });
+
+      if (!res.ok) {
+        const msg = await res.text();
+        throw new Error(msg || `HTTP ${res.status}`);
+      }
+      return res.json();
+    }
+
+    function renderAnswer(data) {
+      const sources = (data.sources && data.sources.length)
+        ? `\n\nSources:\n- ${data.sources.join('\n- ')}`
+        : '';
+      answerEl.textContent = (data.answer || '').trim() + sources;
+      answerEl.style.display = 'block';
+    }
+
+    async function ask(text) {
+      const q = (text || '').trim();
+      if (!q) return;
+
+      answerEl.style.display = 'block';
+      answerEl.textContent = 'Thinking…';
+      setStatus('thinking');
+      askBtn.disabled = true;
+      micBtn.disabled = true;
+
+      try {
+        const data = await callChat(q);
+        setConversationId(data.conversation_id || null);
+        renderAnswer(data);
+        speak(data.answer || '');
+        setStatus('done');
+      } catch (err) {
+        answerEl.textContent = `Error: ${err.message || err}`;
+        setStatus('error');
+      } finally {
+        askBtn.disabled = false;
+        micBtn.disabled = false;
+      }
+    }
+
+    // Submit form
+    askForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await ask(qEl.value);
+    });
+
+    // Cmd/Ctrl + Enter submit
+    qEl.addEventListener('keydown', (e) => {
+      const isMac = navigator.platform.toUpperCase().includes('MAC');
+      if ((isMac ? e.metaKey : e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        askForm.requestSubmit();
+      }
+    });
+
+    // Clear
+    clearBtn.addEventListener('click', () => {
+      qEl.value = '';
+      answerEl.textContent = '';
+      answerEl.style.display = 'none';
+      setStatus('idle');
+    });
+
+    // Voice input (SpeechRecognition) -> sends transcript as text to backend
+    micBtn?.addEventListener('click', () => {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) {
+        alert('SpeechRecognition not supported in this browser. Try Chrome, or type instead.');
+        return;
+      }
+
+      const rec = new SR();
+      rec.lang = 'en-US';
+      rec.interimResults = false;
+
+      micBtn.disabled = true;
+      micBtn.textContent = 'Listening…';
+      setStatus('listening');
+
+      rec.onresult = async (e) => {
+        const transcript = e.results?.[0]?.[0]?.transcript || '';
+        qEl.value = transcript;
+        await ask(transcript);
+      };
+
+      rec.onerror = () => {
+        setStatus('error');
+      };
+
+      rec.onend = () => {
+        micBtn.disabled = false;
+        micBtn.textContent = '🎙️ Speak';
+        if (statusEl.textContent === 'listening') setStatus('idle');
+      };
+
+      rec.start();
+    });
+
+    // On load: show convo id if it exists
+    setConversationId(getConversationId());
+    setStatus('idle');
+  </script>
+</body>
+</html>
