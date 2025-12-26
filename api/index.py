@@ -1,14 +1,11 @@
 import os
 from typing import Optional, List, Any, Dict
-
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-
 from supabase import create_client
 from google import genai
 from google.genai import types
 
-# Vercel Python runtime expects an "app" variable for ASGI frameworks. :contentReference[oaicite:3]{index=3}
 app = FastAPI()
 
 # ---- Config ----
@@ -20,19 +17,12 @@ GEMINI_API_KEY = os.getenv("AIzaSyCMYEtjYcO-XCntKKyQsRzS-5cFI5EEbkI")
 
 EMBED_MODEL = os.getenv("EMBED_MODEL", "gemini-embedding-001")
 CHAT_MODEL = os.getenv("CHAT_MODEL", "gemini-2.0-flash-001")
-
 EMBED_DIMS = int(os.getenv("EMBED_DIMS", "768"))
 MATCH_THRESHOLD = float(os.getenv("MATCH_THRESHOLD", "0.78"))
 MATCH_COUNT = int(os.getenv("MATCH_COUNT", "8"))
 
-if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
-    # We raise runtime errors inside handlers to avoid breaking imports on deploy previews.
-    pass
-
-# Clients (constructed lazily)
 _supabase = None
 _genai = None
-
 
 def get_supabase():
     global _supabase
@@ -42,40 +32,25 @@ def get_supabase():
         _supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
     return _supabase
 
-
 def get_genai():
     global _genai
     if _genai is None:
-        # Client picks up env vars too, but we support explicit key. :contentReference[oaicite:5]{index=5}
         _genai = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else genai.Client()
     return _genai
 
-
 def embed_query(text: str) -> List[float]:
     client = get_genai()
-    # Gemini embedding supports output_dimensionality; default is larger. :contentReference[oaicite:6]{index=6}
-    cfg = types.EmbedContentConfig(
-        task_type="RETRIEVAL_QUERY",
-        output_dimensionality=EMBED_DIMS,
-    )
-    res = client.models.embed_content(
-        model=EMBED_MODEL,
-        contents=[text],
-        config=cfg,
-    )
-    # python-genai returns embeddings with `.values` (common pattern used by integrations)
+    cfg = types.EmbedContentConfig(task_type="RETRIEVAL_QUERY", output_dimensionality=EMBED_DIMS)
+    res = client.models.embed_content(model=EMBED_MODEL, contents=[text], config=cfg)
     return res.embeddings[0].values
-
 
 def build_prompt(user_text: str, docs: List[Dict[str, Any]]) -> str:
     context_blocks = []
     for d in docs:
-        src = d.get("source") or d.get("metadata", {}).get("source") or "unknown"
+        src = d.get("source") or (d.get("metadata") or {}).get("source") or "unknown"
         chunk = d.get("chunk", "")
         context_blocks.append(f"SOURCE: {src}\n{chunk}")
-
     context = "\n\n---\n\n".join(context_blocks).strip()
-
     return f"""You are a helpful startup sales/business assistant.
 Use the CONTEXT if it is relevant. If the context does not contain the answer, say so and give the best general guidance.
 
@@ -84,35 +59,27 @@ CONTEXT:
 
 USER QUESTION:
 {user_text}
-
-Answer clearly and practically. If you used the context, end with a short 'Sources:' list (just the SOURCE names).
 """
-
 
 def generate_answer(prompt: str) -> str:
     client = get_genai()
-    resp = client.models.generate_content(
-        model=CHAT_MODEL,
-        contents=prompt,
-    )
-    # python-genai exposes .text for convenience in docs/examples :contentReference[oaicite:7]{index=7}
+    resp = client.models.generate_content(model=CHAT_MODEL, contents=prompt)
     return (resp.text or "").strip()
-
 
 class ChatRequest(BaseModel):
     text: str
     conversation_id: Optional[str] = None
 
-
 @app.get("/")
 def health():
-    return {"ok": True, "route": "/"}
+    return {"ok": True}
 
-@app.get("/api/chat")
-def health_api_chat():
+@app.get("/chat")
+def health_chat():
     return {"ok": True, "route": "/api/chat"}
 
-def chat_logic(req: ChatRequest):
+@app.post("/chat")
+def chat(req: ChatRequest):
     try:
         supabase = get_supabase()
     except Exception as e:
@@ -144,8 +111,7 @@ def chat_logic(req: ChatRequest):
     except Exception:
         docs = []
 
-    prompt = build_prompt(text, docs)
-    answer = generate_answer(prompt)
+    answer = generate_answer(build_prompt(text, docs))
 
     supabase.table("messages").insert({
         "conversation_id": conversation_id,
@@ -157,22 +123,6 @@ def chat_logic(req: ChatRequest):
     for d in docs:
         src = d.get("source") or (d.get("metadata") or {}).get("source")
         if src and src not in used_sources:
-            used_sources.append(src)gi
+            used_sources.append(src)
 
-    return {
-        "conversation_id": conversation_id,
-        "answer": answer,
-        "sources": used_sources[:6],
-    }
-
-
-@app.post("/")
-def chat_root(req: ChatRequest):
-    return chat_logic(req)
-
-
-@app.post("/api/chat")
-def chat_api(req: ChatRequest):
-    return chat_logic(req)
-
-
+    return {"conversation_id": conversation_id, "answer": answer, "sources": used_sources[:6]}
